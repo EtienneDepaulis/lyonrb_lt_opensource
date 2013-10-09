@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+
+		<title>How to contribute to an open-source project ?</title>
+
+		<meta name="description" content="How to contribute to an open-source project ?">
+		<meta name="author" content="Etienne Depaulis">
+
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<link rel="stylesheet" href="css/reveal.min.css">
+		<link rel="stylesheet" href="css/theme/default.css" id="theme">
+
+		<!-- For syntax highlighting -->
+		<link rel="stylesheet" href="lib/css/zenburn.css">
+
+		<!--[if lt IE 9]>
+		<script src="lib/js/html5shiv.js"></script>
+		<![endif]-->
+	</head>
+
+	<body>
+
+		<div class="reveal">
+
+			<!-- Any section element inside of this container is displayed as a slide -->
+			<div class="slides">
+				<section>
+					<h2>Let's fix a gem in 6 easy steps !</h2>
+					<h4>aka open source contribution</h4>
+					<p><small>LyonRB lightning talks / <a href="http://twitter.com/EtienneDepaulis">@EtienneDepaulis</a></small></p>
+					
+					<img src="perangusta.png" />
+				</section>
+
+				<section>
+					<h2>Context</h2>
+					
+					<p>Our app needs to have localized attributes for certain objects (Ex: Category, Country, ...)</p>
+					
+					<pre><code data-trim contenteditable style="font-size: 18px; margin-top: 20px;">
+gem 'pg'
+gem 'activerecord-postgres-hstore'
+
+# Internationalization
+gem 'hstore_translate' # => https://github.com/robworley/hstore_translate
+					</code></pre>
+					
+				</section>
+				
+				<section>
+					<h2>Hstore Translate</h2>
+					
+
+					
+					<pre><code data-trim contenteditable style="font-size: 18px; margin-top: 20px;">
+I18n.locale = :en
+post.title # => I love beer
+
+I18n.locale = :fr
+post.title # => J'aime la bière
+					</code></pre>
+					
+				</section>
+				
+				<section><h1>BUT...</h1></section>
+				
+				<section>
+					<h3>It's broken :(</h3>
+					
+					<pre><code data-trim contenteditable style="font-size: 18px; margin-top: 20px;">
+Category.create(name: "Sales") # => true
+  
+Category.find_by_name("Sales") # => nil
+					</code></pre>
+					
+
+
+				</section>
+				
+				<section>
+					<h3>Solution #1: let's fix Category !</h3>
+					
+					<pre><code data-trim contenteditable style="font-size: 18px; margin-top: 40px;">
+class Category < ActiveRecord::Base
+  #...
+  translates :name, :description
+  #...
+  def self.find_by_name(name)
+    where("name_translations @> hstore('#{I18n.locale}', '#{name}')").first
+  end
+end
+					</code></pre>
+
+				</section>
+				
+        <section><h1>OR ...</h1></section>
+
+				<section>
+					<h3>Solution #2: let's fix the hstore_translate gem !</h3>
+				</section>
+				
+				
+				<section>
+					<h3>Step #1: fork it</h3>
+					
+					<img src="fork.png" />
+					<img src="fork_result.png" />
+					
+				</section>
+				
+				<section>
+					<h3>Step #2: clone it</h3>
+					
+					<img src="clone.png" />
+          
+          <pre><code data-trim contenteditable style="font-size: 18px; margin-top: 40px;">
+git clone git@github.com:EtienneDepaulis/hstore_translate.git && cd hstore_translate/
+					</code></pre>
+					
+				</section>
+				
+				<section>
+					<h3>Step #3: create a new branch</h3>
+					
+          <pre><code data-trim contenteditable style="font-size: 18px; margin-top: 40px;">
+git checkout -b adding_a_finder
+					</code></pre>
+					
+				</section>
+				
+				<section>
+					<h3>Step #4: fix the problem</h3>
+					<p><small>Dislaimer: that's the real tricky part!</small></p>
+					
+          <pre><code data-trim contenteditable style="font-size: 18px; margin-top: 40px;">
+require 'test_helper'
+
+class TranslatesTest < HstoreTranslate::Test
+  def test_adds_a_find_by_finder
+    p = Post.create!(:title_translations => { "en" => "Alice in Wonderland", "fr" => "Alice au pays des merveilles" })
+    I18n.with_locale(:en) do
+      assert_equal(p.title_en, Post.find_by_title("Alice in Wonderland").try(:title))
+    end
+  end
+end
+					</code></pre>
+					
+					<pre><code data-trim contenteditable style="font-size: 18px; margin-top: 40px;">
+→ rake
+Run options: --seed 33581
+
+# Running tests:
+...............
+Finished tests in 0.068925s, 217.6279 tests/s, 217.6279 assertions/s.
+15 tests, 15 assertions, 0 failures, 0 errors, 0 skips
+					</code></pre>
+					
+				</section>
+				
+				<section>
+				  <h3>Yeaaahh !</h3>
+				  <img src="grandma.png" />
+				  </section>
+				
+				<section>
+					<h3>Step #5: push the new branch on your repo</h3>
+					
+          <pre><code data-trim contenteditable style="font-size: 18px; margin-top: 40px;">
+git push origin adding_a_finder
+					</code></pre>
+					
+				</section>
+				
+				<section>
+					<h3>Step #6: create a pull request</h3>
+					
+          <img src="new_pr.png" />
+          <img src="pr.png" />
+          
+          <p>Starting a pull request is like starting a discusion :)</p>
+					
+				</section>
+				
+				<section>
+					<h3>Step #7: wait for approval ...</h3>
+					
+          <img src="completed_pr.png" />
+					
+				</section>
+				
+				
+				<section>
+					<h3>In the meantime</h3>
+					
+					<pre><code data-trim contenteditable style="font-size: 18px; margin-top: 40px;">
+gem 'hstore_translate', :git => "git://github.com/EtienneDepaulis/hstore_translate.git", :branch => "adding_a_finder"
+					</code></pre>
+          
+					
+				</section>
+				
+				
+				
+
+	
+
+				<section>
+					<h1>THE END</h1>
+					<h3>BY Etienne Depaulis</h3>
+				</section>
+
+			</div>
+
+		</div>
+
+		<script src="lib/js/head.min.js"></script>
+		<script src="js/reveal.min.js"></script>
+
+		<script>
+
+			// Full list of configuration options available here:
+			// https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				controls: true,
+				progress: true,
+				history: true,
+				center: true,
+
+				theme: Reveal.getQueryHash().theme, // available themes are in /css/theme
+				transition: Reveal.getQueryHash().transition || 'default', // default/cube/page/concave/zoom/linear/fade/none
+
+				// Optional libraries used to extend on reveal.js
+				dependencies: [
+					{ src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+					{ src: 'plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+					{ src: 'plugin/zoom-js/zoom.js', async: true, condition: function() { return !!document.body.classList; } },
+					{ src: 'plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } }
+				]
+			});
+
+		</script>
+
+	</body>
+</html>
